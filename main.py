@@ -16,7 +16,6 @@ class GTFSSchedulePoster:
     def __init__(self, gtfs_path):
         self.gtfs_path = gtfs_path
         self.data = {}
-
         self.config = {
             "color": "#3069b3",
             "page_w_mm": 800,
@@ -26,7 +25,6 @@ class GTFSSchedulePoster:
             "box_padding": 8.0,
             "box_font_size": 16.0,
         }
-
         self._load_data()
 
     def _load_data(self):
@@ -328,11 +326,19 @@ class GTFSSchedulePoster:
 if __name__ == "__main__":
     if os.path.exists("gtfs.zip"):
         gen = GTFSSchedulePoster("gtfs.zip")
-        stops = input("Stop numbers (comma separated): ")
-        city = input("City (for QR): ")
-        label = input("Date Label: ")
-        sch_date = datetime.strptime(input("School Mon (YYYY-MM-DD): "), "%Y-%m-%d")
-        hol_date = datetime.strptime(input("Holiday Mon (YYYY-MM-DD): "), "%Y-%m-%d")
-        gen.generate_batch(stops, label, city, sch_date, hol_date)
+        # Restored suggestions for the user
+        stops = input("Enter stop numbers separated by comma (e.g., 155527,155528): ")
+        city = input("Enter the city name for the QR code (e.g., Kotka, Kouvola, Helsinki): ").strip()
+        label = input("Enter valid date label (e.g., 10.8.2025–31.5.2026): ").strip()
+        sch_input = input("Enter school week start Monday (YYYY-MM-DD): ").strip()
+        hol_input = input("Enter holiday week start Monday (YYYY-MM-DD): ").strip()
+        
+        try:
+            sch_date = datetime.strptime(sch_input, "%Y-%m-%d")
+            hol_date = datetime.strptime(hol_input, "%Y-%m-%d")
+            gen.generate_batch(stops, label, city, sch_date, hol_date)
+        except ValueError:
+            print("❌ Error: Invalid date format. Please use YYYY-MM-DD.")
     else:
-        print("❌ Error: gtfs.zip not found.")
+        # Fixed error message to match gtfs.zip requirement
+        print("❌ Error: gtfs.zip not found. Please place the GTFS file as 'gtfs.zip' in this directory.")
