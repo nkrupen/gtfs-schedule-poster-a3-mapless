@@ -8,7 +8,6 @@ import warnings
 from datetime import datetime, timedelta
 import subprocess
 import shutil
-from jinja2 import Environment, FileSystemLoader
 
 warnings.filterwarnings("ignore")
 
@@ -43,7 +42,7 @@ class GTFSSchedulePoster:
                             return df
                     return pd.DataFrame()
 
-                tables = ["stops", "stop_times", "trips", "routes", "calendar", "calendar_dates", "agency"]
+                tables = ["stops", "stop_times", "trips", "routes", "calendar", "calendar_dates"]
                 for t in tables:
                     self.data[t] = load_csv(f"{t}.txt")
         except FileNotFoundError:
@@ -98,10 +97,6 @@ class GTFSSchedulePoster:
         if zone == "2": zone = "B"
         return name, code, zone
 
-    def _clean_dest(self, dest):
-        s = re.sub(r"(?i)\(KANTASATAMA\)|KANTASATAMA", "", str(dest or "")).strip(" -–—,/| ")
-        return re.sub(r"\s{2,}", " ", s)
-
     def generate_schedule_html_data(self, stop_id, s_mon, h_mon):
         trips_s = self._get_active_trips_for_week(stop_id, s_mon, s_mon + timedelta(days=6))
         trips_h = self._get_active_trips_for_week(stop_id, h_mon, h_mon + timedelta(days=6))
@@ -148,24 +143,24 @@ class GTFSSchedulePoster:
             if pat[5]: rows.append({"bucket": "Sat", "h": info["h"], "m": info["m"], "line": info["line"], "fn": None, "type": "NORMAL"})
             if pat[6]: rows.append({"bucket": "Sun", "h": info["h"], "m": info["m"], "line": info["line"], "fn": None, "type": "NORMAL"})
 
-        legend = '<div class="legend-container">'
+        legend = '<div class="legend-container" style="font-size:2em; margin-top:20px;">'
         if mon_fri_pats:
             dfi = ["maanantaisin", "tiistaisin", "keskiviikkoisin", "torstaisin", "perjantaisin"]
             den = ["on Mondays", "on Tuesdays", "on Wednesdays", "on Thursdays", "on Fridays"]
             for p, fid in sorted(mon_fri_pats.items(), key=lambda x: x[1]):
                 idx = [i for i, v in enumerate(p) if v]
                 fi, en = ", ".join([dfi[i] for i in idx]).capitalize(), ", ".join([den[i] for i in idx])
-                legend += f'<div><strong>{fid})</strong> {fi} / <i>{en}</i></div>'
-        legend += '<div>Arkipyhinä sunnuntai-aikataulut. / <i>Public holidays use Sunday times.</i></div>'
-        if has_s: legend += '<div><span style="background:#E3F2FD; padding:2px 5px;">&nbsp;</span> = Vain koulupäivinä / <i>School days only</i></div>'
-        if has_h: legend += '<div><span style="background:#FFF3E0; padding:2px 5px;">&nbsp;</span> = Vain lomapäivinä / <i>Holidays only</i></div>'
+                legend += f'<div><strong>{fid})</strong> {fi} / <span style="font-style:italic; opacity:0.8;">{en}</span></div>'
+        legend += '<div>Arkipyhinä sunnuntai-aikataulut. / <span style="font-style:italic; opacity:0.8;">Public holidays use Sunday times.</span></div>'
+        if has_s: legend += '<div><span style="background:#E3F2FD; border:1px solid #BBDEFB; padding:2px 5px;">&nbsp;</span> = Vain koulupäivinä / <span style="font-style:italic; opacity:0.8;">School days only</span></div>'
+        if has_h: legend += '<div><span style="background:#FFF3E0; border:1px solid #FFE0B2; padding:2px 5px;">&nbsp;</span> = Vain lomapäivinä / <span style="font-style:italic; opacity:0.8;">Holidays only</span></div>'
         legend += "</div>"
 
         html_map = {}
         tr, ti = 0, 0
         for b in ["Mon-Fri", "Sat", "Sun"]:
             e = sorted([r for r in rows if r["bucket"] == b], key=lambda x: (x["h"], x["m"]))
-            chunk = '<div class="sc-row sc-header"><div class="sc-h">Tunti | <i>hour</i></div><div class="sc-m">min | linja</div></div>'
+            chunk = '<div class="sc-row sc-header" style="font-weight:bold; border-bottom:3px solid black;"><div class="sc-h" style="width:7em; padding:4px;">Tunti | Hour</div><div class="sc-m" style="flex:1; padding:4px;">min | linja</div></div>'
             if not e: html_map[b] = chunk; continue
             ti += len(e)
             h_map = {}
@@ -173,7 +168,7 @@ class GTFSSchedulePoster:
                 c = "#1565C0" if x["type"]=="SCHOOL" else ("#EF6C00" if x["type"]=="HOLIDAY" else "#000")
                 bg = "#E3F2FD" if x["type"]=="SCHOOL" else ("#FFF3E0" if x["type"]=="HOLIDAY" else "transparent")
                 fn = f"<sup>{x['fn']})</sup>" if x["fn"] else ""
-                h_map.setdefault(x["h"], []).append(f"<div style='display:inline-block; background:{bg}; color:{c}; padding:2px; border-radius:4px;'><strong>{x['m']:02d}</strong>{fn}/{x['line']}</div>")
+                h_map.setdefault(x["h"], []).append(f"<div style='display:inline-block; background:{bg}; color:{c}; padding:4px; border-radius:4px; margin:2px;'><strong>{x['m']:02d}</strong>{fn}/{x['line']}</div>")
             
             srt = sorted(h_map.keys())
             i = 0
@@ -181,7 +176,7 @@ class GTFSSchedulePoster:
                 ch, cur_m, eh, j = srt[i], "".join(h_map[srt[i]]), srt[i], i+1
                 while j < len(srt) and srt[j] == eh + 1 and "".join(h_map[srt[j]]) == cur_m: eh = srt[j]; j += 1
                 lbl = f"{ch if ch < 24 else ch-24:02d}" + (f"&ndash;{eh if eh < 24 else eh-24:02d}" if eh > ch else "")
-                chunk += f'<div class="sc-row"><div class="sc-h">{lbl}</div><div class="sc-m">{cur_m}</div></div>'; tr += 1; i = j
+                chunk += f'<div class="sc-row" style="display:flex; border-bottom:1px solid #ddd;"><div class="sc-h" style="width:7em; padding:4px; font-weight:bold;">{lbl}</div><div class="sc-m" style="flex:1; padding:4px;">{cur_m}</div></div>'; tr += 1; i = j
             html_map[b] = chunk
         return html_map, legend, tr, ti
 
@@ -190,21 +185,32 @@ class GTFSSchedulePoster:
             name, code, zone = self.get_stop_info(stop_id)
             chunks, leg, rows, items = self.generate_schedule_html_data(stop_id, s_dt, h_dt)
             ds = rows + (items / 6.0)
-            f = "3.8em" if ds < 55 else ("3.1em" if ds < 80 else "2.1em")
-            lh = "1.3" if ds < 55 else "1.1"
+            f_size = "3.8em" if ds < 55 else ("3.1em" if ds < 80 else "2.1em")
+            l_height = "1.3" if ds < 55 else "1.1"
 
-            env = Environment(loader=FileSystemLoader('templates'))
-            t = env.get_template('poster_template.html')
-            
-            html = t.render(
-                page_w_mm=800, page_h_mm=1131, bg_color="#3069b3", font_size=f, line_height=lh,
-                stop_name=name, date_label=label, stop_zone=zone, qr_img_url=f"https://api.qrserver.com/v1/create-qr-code/?data={urllib.parse.quote(f'https://{city.lower()}.digitransit.fi/pysakit/{city}:{stop_id}')}",
-                stop_number_html=f'<div>Pysäkki: {code}</div>' if zone != "B" else "",
-                monfri_html=chunks["Mon-Fri"], saturday_html=chunks["Sat"], sunday_html=chunks["Sun"], legend_html=leg,
-                logo_html=open("assets/logo.svg").read() if os.path.exists("assets/logo.svg") else "",
-                alareuna_svg_inline=open("assets/alareuna.svg").read() if os.path.exists("assets/alareuna.svg") else ""
-            )
-            with open(out, "w") as f: f.write(html)
+            with open('templates/poster_template.html', 'r', encoding='utf-8') as f:
+                template_str = f.read()
+
+            replacements = {
+                "{{ stop_name }}": name,
+                "{{ date_label }}": label,
+                "{{ stop_zone }}": zone,
+                "{{ stop_number_html }}": f'<div>Pysäkki: {code}</div>' if zone != "B" else "",
+                "{{ monfri_html }}": chunks["Mon-Fri"],
+                "{{ saturday_html }}": chunks["Sat"],
+                "{{ sunday_html }}": chunks["Sun"],
+                "{{ legend_html }}": leg,
+                "{{ font_size }}": f_size,
+                "{{ line_height }}": l_height,
+                "{{ qr_img_url }}": f"https://api.qrserver.com/v1/create-qr-code/?data={urllib.parse.quote(f'https://{city.lower()}.digitransit.fi/pysakit/{city}:{stop_id}')}",
+                "{{ logo_html }}": open("assets/logo.svg").read() if os.path.exists("assets/logo.svg") else "",
+                "{{ alareuna_svg_inline }}": open("assets/alareuna.svg").read() if os.path.exists("assets/alareuna.svg") else ""
+            }
+
+            for k, v in replacements.items():
+                template_str = template_str.replace(k, str(v))
+
+            with open(out, "w", encoding='utf-8') as f: f.write(template_str)
             pdf = out.replace(".html", ".pdf")
             subprocess.run(["google-chrome", "--headless", "--no-sandbox", f"--print-to-pdf={pdf}", "--no-pdf-header-footer", out], check=True)
             return pdf
@@ -212,6 +218,7 @@ class GTFSSchedulePoster:
 
     def generate_batch(self, stops_str, label, city, s_dt, h_dt):
         ids = [i.strip() for i in stops_str.split(",") if i.strip()]
+        if os.path.exists("generated_posters"): shutil.rmtree("generated_posters")
         os.makedirs("generated_posters", exist_ok=True)
         for sid in ids:
             res = self.generate_poster(sid, label, city, s_dt, h_dt, f"{sid}.html")
@@ -222,7 +229,9 @@ class GTFSSchedulePoster:
         try:
             from google.colab import files
             files.download("schedule_posters.zip")
-        except: print("Manually download schedule_posters.zip from sidebar.")
+        except Exception as e:
+            print(f"⚠️ Automatic download failed: {e}")
+            print("Please manually download 'schedule_posters.zip' from the files sidebar on the left.")
 
 if __name__ == "__main__":
     if os.path.exists("gtfs.zip"):
@@ -233,3 +242,5 @@ if __name__ == "__main__":
         sd = datetime.strptime(input("School Mon (YYYY-MM-DD): "), "%Y-%m-%d")
         hd = datetime.strptime(input("Holiday Mon (YYYY-MM-DD): "), "%Y-%m-%d")
         gen.generate_batch(st, lb, cy, sd, hd)
+    else:
+        print("❌ Error: gtfs.zip not found.")
