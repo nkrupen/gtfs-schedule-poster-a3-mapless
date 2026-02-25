@@ -15,12 +15,6 @@ class GTFSSchedulePoster:
     def __init__(self, gtfs_path):
         self.gtfs_path = gtfs_path
         self.data = {}
-        self.config = {
-            "color": "#3069b3",
-            "page_w_mm": 800,
-            "page_h_mm": 1131,
-            "font_main": "Arial, sans-serif",
-        }
         self._load_data()
 
     def _load_data(self):
@@ -98,6 +92,7 @@ class GTFSSchedulePoster:
         return name, code, zone
 
     def generate_schedule_html_data(self, stop_id, s_mon, h_mon):
+        # THIS USES THE DATES FROM THE USER PROMPT
         trips_s = self._get_active_trips_for_week(stop_id, s_mon, s_mon + timedelta(days=6))
         trips_h = self._get_active_trips_for_week(stop_id, h_mon, h_mon + timedelta(days=6))
         visits = self.data["stop_times"][self.data["stop_times"]["stop_id"] == str(stop_id)]
@@ -157,12 +152,10 @@ class GTFSSchedulePoster:
         legend += "</div>"
 
         html_map = {}
-        tr, ti = 0, 0
         for b in ["Mon-Fri", "Sat", "Sun"]:
             e = sorted([r for r in rows if r["bucket"] == b], key=lambda x: (x["h"], x["m"]))
             chunk = '<div class="sc-row sc-header" style="font-weight:bold; border-bottom:3px solid black;"><div class="sc-h" style="width:7em; padding:4px;">Tunti | Hour</div><div class="sc-m" style="flex:1; padding:4px;">min | linja</div></div>'
             if not e: html_map[b] = chunk; continue
-            ti += len(e)
             h_map = {}
             for x in e:
                 c = "#1565C0" if x["type"]=="SCHOOL" else ("#EF6C00" if x["type"]=="HOLIDAY" else "#000")
@@ -176,9 +169,9 @@ class GTFSSchedulePoster:
                 ch, cur_m, eh, j = srt[i], "".join(h_map[srt[i]]), srt[i], i+1
                 while j < len(srt) and srt[j] == eh + 1 and "".join(h_map[srt[j]]) == cur_m: eh = srt[j]; j += 1
                 lbl = f"{ch if ch < 24 else ch-24:02d}" + (f"&ndash;{eh if eh < 24 else eh-24:02d}" if eh > ch else "")
-                chunk += f'<div class="sc-row" style="display:flex; border-bottom:1px solid #ddd;"><div class="sc-h" style="width:7em; padding:4px; font-weight:bold;">{lbl}</div><div class="sc-m" style="flex:1; padding:4px;">{cur_m}</div></div>'; tr += 1; i = j
+                chunk += f'<div class="sc-row" style="display:flex; border-bottom:1px solid #ddd;"><div class="sc-h" style="width:7em; padding:4px; font-weight:bold;">{lbl}</div><div class="sc-m" style="flex:1; padding:4px;">{cur_m}</div></div>'; i = j
             html_map[b] = chunk
-        return html_map, legend, tr, ti
+        return html_map, legend, len(rows), len(merged)
 
     def generate_poster(self, stop_id, label, city, s_dt, h_dt, out):
         try:
@@ -221,7 +214,6 @@ class GTFSSchedulePoster:
 
     def generate_batch(self, stops_str, label, city, s_dt, h_dt):
         ids = [i.strip() for i in stops_str.split(",") if i.strip()]
-        print(f"\n--- Starting Batch: {len(ids)} stops ---")
         if os.path.exists("generated_posters"): shutil.rmtree("generated_posters")
         os.makedirs("generated_posters", exist_ok=True)
         
@@ -239,32 +231,27 @@ class GTFSSchedulePoster:
             try:
                 from google.colab import files
                 files.download("schedule_posters.zip")
-            except Exception as e:
-                print(f"⚠️ Manual download required: schedule_posters.zip")
-        else:
-            print("\n❌ No posters were generated. Check stop IDs and GTFS data.")
+            except Exception:
+                print(f"⚠️ Manual download: Download 'schedule_posters.zip' from the sidebar.")
 
 if __name__ == "__main__":
     GTFS_FILE = "gtfs.zip"
     if os.path.exists(GTFS_FILE):
-        # 1. Capture Inputs
-        print("--- GTFS Poster Generator Configuration ---")
-        STOPS_INPUT = input("Enter stop numbers (e.g., 155527,155528): ")
-        CITY_INPUT = input("Enter city (e.g., Kotka, Helsinki): ").strip()
-        LABEL_INPUT = input("Enter date label (e.g., 10.8.2025–31.5.2026): ")
-        S_MON_INPUT = input("School Monday (YYYY-MM-DD): ")
-        H_MON_INPUT = input("Holiday Monday (YYYY-MM-DD): ")
+        print("--- GTFS Poster Generator ---")
+        STOPS = input("Enter stop numbers (e.g., 155527,155528): ")
+        CITY = input("Enter city (e.g., Kotka): ").strip()
+        LABEL = input("Enter date label (e.g., 10.8.2025–31.5.2026): ")
+        S_STR = input("School Monday (YYYY-MM-DD): ")
+        H_STR = input("Holiday Monday (YYYY-MM-DD): ")
         
-        # 2. Parse Dates
         try:
-            S_DATE = datetime.strptime(S_MON_INPUT, "%Y-%m-%d")
-            H_DATE = datetime.strptime(H_MON_INPUT, "%Y-%m-%d")
+            S_DT = datetime.strptime(S_STR, "%Y-%m-%d")
+            H_DT = datetime.strptime(H_STR, "%Y-%m-%d")
             
-            # 3. Initialize and Run
             gen = GTFSSchedulePoster(GTFS_FILE)
-            gen.generate_batch(STOPS_INPUT, LABEL_INPUT, CITY_INPUT, S_DATE, H_DATE)
+            gen.generate_batch(STOPS, LABEL, CITY, S_DT, H_DT)
             
         except ValueError:
-            print("❌ Error: Date format must be YYYY-MM-DD.")
+            print("❌ Date error. Use YYYY-MM-DD.")
     else:
-        print(f"❌ Error: {GTFS_FILE} not found in the current directory.")
+        print(f"❌ {GTFS_FILE} not found.")
