@@ -89,7 +89,7 @@ class GTFSSchedulePoster:
     def get_stop_info(self, stop_id):
         s = self.data.get("stops")
         row = s[s["stop_id"] == str(stop_id)]
-        if row.empty: return "Unknown", "???", "A"
+        if row.empty: return "Unknown Stop", "???", "A"
         name = row.iloc[0].get("stop_name", "Unknown")
         code = row.iloc[0].get("stop_code", stop_id)
         zone = row.iloc[0].get("zone_id", "A")
@@ -143,7 +143,7 @@ class GTFSSchedulePoster:
             if pat[5]: rows.append({"bucket": "Sat", "h": info["h"], "m": info["m"], "line": info["line"], "fn": None, "type": "NORMAL"})
             if pat[6]: rows.append({"bucket": "Sun", "h": info["h"], "m": info["m"], "line": info["line"], "fn": None, "type": "NORMAL"})
 
-        legend = '<div class="legend-container" style="font-size:2em; margin-top:20px;">'
+        legend = '<div class="legend-container" style="font-size:1.8em; margin-top:20px;">'
         if mon_fri_pats:
             dfi = ["maanantaisin", "tiistaisin", "keskiviikkoisin", "torstaisin", "perjantaisin"]
             den = ["on Mondays", "on Tuesdays", "on Wednesdays", "on Thursdays", "on Fridays"]
@@ -183,6 +183,7 @@ class GTFSSchedulePoster:
     def generate_poster(self, stop_id, label, city, s_dt, h_dt, out):
         try:
             name, code, zone = self.get_stop_info(stop_id)
+            print(f"   -> Processing: {name} ({stop_id})")
             chunks, leg, rows, items = self.generate_schedule_html_data(stop_id, s_dt, h_dt)
             ds = rows + (items / 6.0)
             f_size = "3.8em" if ds < 55 else ("3.1em" if ds < 80 else "2.1em")
@@ -202,7 +203,7 @@ class GTFSSchedulePoster:
                 "{{ legend_html }}": leg,
                 "{{ font_size }}": f_size,
                 "{{ line_height }}": l_height,
-                "{{ qr_img_url }}": f"https://api.qrserver.com/v1/create-qr-code/?data={urllib.parse.quote(f'https://{city.lower()}.digitransit.fi/pysakit/{city}:{stop_id}')}",
+                "{{ qr_img_url }}": f"https://api.qrserver.com/v1/create-qr-code/?data={urllib.parse.quote(f'https://{city.lower()}.digitransit.fi/pysakit/{city.capitalize()}:{stop_id}')}",
                 "{{ logo_html }}": open("assets/logo.svg").read() if os.path.exists("assets/logo.svg") else "",
                 "{{ alareuna_svg_inline }}": open("assets/alareuna.svg").read() if os.path.exists("assets/alareuna.svg") else ""
             }
@@ -214,33 +215,56 @@ class GTFSSchedulePoster:
             pdf = out.replace(".html", ".pdf")
             subprocess.run(["google-chrome", "--headless", "--no-sandbox", f"--print-to-pdf={pdf}", "--no-pdf-header-footer", out], check=True)
             return pdf
-        except Exception as e: print(f"Error: {e}"); return None
+        except Exception as e: 
+            print(f"   ❌ Error on stop {stop_id}: {e}")
+            return None
 
     def generate_batch(self, stops_str, label, city, s_dt, h_dt):
         ids = [i.strip() for i in stops_str.split(",") if i.strip()]
+        print(f"\n--- Starting Batch: {len(ids)} stops ---")
         if os.path.exists("generated_posters"): shutil.rmtree("generated_posters")
         os.makedirs("generated_posters", exist_ok=True)
+        
+        success_count = 0
         for sid in ids:
             res = self.generate_poster(sid, label, city, s_dt, h_dt, f"{sid}.html")
-            if res: shutil.move(res, f"generated_posters/{res}")
+            if res: 
+                shutil.move(res, f"generated_posters/{res}")
+                success_count += 1
             if os.path.exists(f"{sid}.html"): os.remove(f"{sid}.html")
-        shutil.make_archive("schedule_posters", 'zip', "generated_posters")
-        print("✅ Batch complete!")
-        try:
-            from google.colab import files
-            files.download("schedule_posters.zip")
-        except Exception as e:
-            print(f"⚠️ Automatic download failed: {e}")
-            print("Please manually download 'schedule_posters.zip' from the files sidebar on the left.")
+        
+        if success_count > 0:
+            shutil.make_archive("schedule_posters", 'zip', "generated_posters")
+            print(f"\n✅ Batch complete! {success_count} posters generated.")
+            try:
+                from google.colab import files
+                files.download("schedule_posters.zip")
+            except Exception as e:
+                print(f"⚠️ Manual download required: schedule_posters.zip")
+        else:
+            print("\n❌ No posters were generated. Check stop IDs and GTFS data.")
 
 if __name__ == "__main__":
-    if os.path.exists("gtfs.zip"):
-        gen = GTFSSchedulePoster("gtfs.zip")
-        st = input("Enter stop numbers (e.g., 155527,155528): ")
-        cy = input("Enter city (e.g., Kotka, Helsinki): ").strip()
-        lb = input("Enter date label: ")
-        sd = datetime.strptime(input("School Mon (YYYY-MM-DD): "), "%Y-%m-%d")
-        hd = datetime.strptime(input("Holiday Mon (YYYY-MM-DD): "), "%Y-%m-%d")
-        gen.generate_batch(st, lb, cy, sd, hd)
+    GTFS_FILE = "gtfs.zip"
+    if os.path.exists(GTFS_FILE):
+        # 1. Capture Inputs
+        print("--- GTFS Poster Generator Configuration ---")
+        STOPS_INPUT = input("Enter stop numbers (e.g., 155527,155528): ")
+        CITY_INPUT = input("Enter city (e.g., Kotka, Helsinki): ").strip()
+        LABEL_INPUT = input("Enter date label (e.g., 10.8.2025–31.5.2026): ")
+        S_MON_INPUT = input("School Monday (YYYY-MM-DD): ")
+        H_MON_INPUT = input("Holiday Monday (YYYY-MM-DD): ")
+        
+        # 2. Parse Dates
+        try:
+            S_DATE = datetime.strptime(S_MON_INPUT, "%Y-%m-%d")
+            H_DATE = datetime.strptime(H_MON_INPUT, "%Y-%m-%d")
+            
+            # 3. Initialize and Run
+            gen = GTFSSchedulePoster(GTFS_FILE)
+            gen.generate_batch(STOPS_INPUT, LABEL_INPUT, CITY_INPUT, S_DATE, H_DATE)
+            
+        except ValueError:
+            print("❌ Error: Date format must be YYYY-MM-DD.")
     else:
-        print("❌ Error: gtfs.zip not found.")
+        print(f"❌ Error: {GTFS_FILE} not found in the current directory.")
