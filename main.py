@@ -16,6 +16,7 @@ class GTFSSchedulePoster:
     def __init__(self, gtfs_path):
         self.gtfs_path = gtfs_path
         self.data = {}
+
         self.config = {
             "color": "#3069b3",
             "page_w_mm": 800,
@@ -25,6 +26,7 @@ class GTFSSchedulePoster:
             "box_padding": 8.0,
             "box_font_size": 16.0,
         }
+
         self._load_data()
 
     def _load_data(self):
@@ -54,7 +56,7 @@ class GTFSSchedulePoster:
                 self.data["calendar_dates"] = load_csv("calendar_dates.txt")
                 self.data["agency"] = load_csv("agency.txt")
         except FileNotFoundError:
-            print(f"Error: The file {self.gtfs_path} was not found.")
+            print(f"❌ Error: The file {self.gtfs_path} was not found.")
             self.data = {}
 
     def _is_service_active_in_week(self, service_id, monday_dt, sunday_dt):
@@ -317,16 +319,18 @@ class GTFSSchedulePoster:
 
         if generated:
             shutil.make_archive("schedule_posters", 'zip', out_dir)
-            print("✅ Done!")
+            print("✅ Batch complete! Download starting for schedule_posters.zip")
             try:
                 from google.colab import files
                 files.download("schedule_posters.zip")
             except Exception: print("Download schedule_posters.zip manually.")
 
 if __name__ == "__main__":
-    if os.path.exists("gtfs.zip"):
-        gen = GTFSSchedulePoster("gtfs.zip")
-        # Restored suggestions for the user
+    gtfs_file = "gtfs.zip"
+    if os.path.exists(gtfs_file):
+        gen = GTFSSchedulePoster(gtfs_file)
+        
+        # RESTORED FULL USER PROMPTS AND SUGGESTIONS
         stops = input("Enter stop numbers separated by comma (e.g., 155527,155528): ")
         city = input("Enter the city name for the QR code (e.g., Kotka, Kouvola, Helsinki): ").strip()
         label = input("Enter valid date label (e.g., 10.8.2025–31.5.2026): ").strip()
@@ -340,5 +344,5 @@ if __name__ == "__main__":
         except ValueError:
             print("❌ Error: Invalid date format. Please use YYYY-MM-DD.")
     else:
-        # Fixed error message to match gtfs.zip requirement
-        print("❌ Error: gtfs.zip not found. Please place the GTFS file as 'gtfs.zip' in this directory.")
+        # FIXED ERROR MESSAGE FOR FILENAME
+        print(f"❌ Error: gtfs.zip not found. Please place the GTFS file as '{gtfs_file}' in this directory.")
