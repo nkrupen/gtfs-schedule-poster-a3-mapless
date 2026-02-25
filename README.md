@@ -39,8 +39,8 @@ gtfs-schedule-poster/
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/gtfs-schedule-poster-a3-mapless.git
-cd gtfs-schedule-poster-a3-mapless
+!git clone https://github.com/nkrupen/gtfs-schedule-poster-a3-mapless.git
+%cd gtfs-schedule-poster-a3-mapless
 ```
 
 2. Install the required Python packages:
