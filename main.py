@@ -697,13 +697,15 @@ class GTFSSchedulePoster:
         shutil.make_archive(zip_filename, 'zip', output_dir)
         
         final_zip_name = zip_filename + ".zip"
-        print(f"✅ Batch complete! Download starting for {final_zip_name}")
+        print(f"✅ Batch complete! {final_zip_name} created.")
 
         try:
             from google.colab import files
+            print(f"Attempting to download {final_zip_name}...")
             files.download(final_zip_name)
-        except ImportError:
-            print(f"Not in Colab. File saved locally as {final_zip_name}")
+        except Exception as e:
+            print(f"Note: Automatic download trigger skipped or failed: {e}")
+            print(f"You can manually download the file from the Colab sidebar: {final_zip_name}")
 
 
 if __name__ == "__main__":
