@@ -3,105 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <style>
-    @page { size: {{ page_w_mm }}mm {{ page_h_mm }}mm; margin: 0; }
-    body {
-        margin: 0; padding: 0;
-        font-family: Arial, sans-serif;
-        background-color: {{ bg_color }};
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-    .poster-container {
-        width: {{ page_w_mm }}mm; height: {{ page_h_mm }}mm;
-        display: flex; flex-direction: column; overflow: hidden;
-    }
-    .en { color: #000; font-style: italic; }
-
-    /* ---------- HEADER ---------- */
-    .header {
-        flex: 0 0 auto; background-color: {{ bg_color }};
-        padding: 15mm 20mm 5mm 20mm; display: flex;
-        justify-content: space-between; align-items: flex-start; color: white;
-    }
-    .header-left { flex: 1; min-width: 0; padding-left: 15mm; }
-    .h-stop-name { font-size: 6.2em; font-weight: bold; line-height: 1; letter-spacing: -0.5px; }
-    .h-valid-combined { font-size: 3em; margin-top: 15px; font-weight: 300; }
-    
-    .header-right { display: flex; align-items: center; gap: 20mm; flex: 0 0 auto; }
-    .header-info-wrapper { display: flex; gap: 15mm; }
-    .h-info-group { display: flex; flex-direction: column; align-items: center; }
-    .h-label { font-size: 2.2em; margin-bottom: 8px; opacity: 0.95; }
-    .h-value { font-size: 5.6em; font-weight: bold; line-height: 0.95; }
-
-    .header-logo { height: 40mm; width: auto; }
-    .header-logo svg { fill: white; height: 100%; width: auto; display: block; }
-
-    /* ---------- MAIN CONTENT ---------- */
-    .content-wrap { flex: 1 1 auto; padding: 0 20mm 20mm 20mm; }
-    .unified-box { background: white; border-radius: 30px; padding: 15mm; display: flex; flex-direction: column; min-height: 900px; }
-
-    .sc-block { margin-bottom: 25px; width: 100%; }
-    .sc-title { font-size: {{ font_size }}; font-weight: bold; border-bottom: 4px solid black; padding-bottom: 8px; margin-bottom: 15px; }
-    
-    .sc-row { display: flex; border-bottom: 1px solid #ddd; font-size: {{ font_size }}; line-height: {{ line_height }}; align-items: stretch; }
-    .sc-row:nth-child(odd):not(.sc-header) { background-color: #f2f2f2; }
-    .sc-header { border-bottom: 3px solid black; font-weight: bold; }
-    
-    .sc-h { width: 7.0em; font-weight: bold; padding: 4px 6px; flex-shrink: 0; }
-    .sc-m { flex: 1; padding: 4px 0 4px 10px; display: flex; flex-wrap: wrap; gap: 0.8em; }
-
-    /* ---------- FOOTER ---------- */
-    .alareuna-box { margin-top: auto; position: relative; width: 100%; }
-    .alareuna-svg svg { display: block; width: 100%; height: auto; }
-    .qr-group { position: absolute; bottom: 30px; right: 20px; }
-    .qr-box { background: white; padding: 15px; border-radius: 20px; width: 200px; height: 200px; }
+    @page { size: 800mm 1131mm; margin: 0; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #3069b3; }
+    .poster { width: 800mm; height: 1131mm; display: flex; flex-direction: column; }
+    .header { padding: 40px; color: white; display: flex; justify-content: space-between; }
+    .h-stop-name { font-size: 5em; font-weight: bold; }
+    .content { background: white; margin: 20px; padding: 40px; border-radius: 40px; flex-grow: 1; font-size: {{ font_size }}; line-height: {{ line_height }}; }
+    .sc-title { font-size: 1.5em; font-weight: bold; border-bottom: 5px solid black; margin-bottom: 20px; }
+    .footer { position: relative; height: 140px; margin-top: 20px; }
+    .qr { position: absolute; right: 20px; bottom: 20px; width: 200px; height: 200px; background: white; padding: 10px; border-radius: 20px; }
 </style>
 </head>
 <body>
-    <div class="poster-container">
+    <div class="poster">
         <div class="header">
-            <div class="header-left">
+            <div>
                 <div class="h-stop-name">{{ stop_name }}</div>
-                <div class="h-valid-combined">Aikataulut ovat voimassa | <span class="en">Timetables valid</span> {{ date_label }}</div>
+                <div style="font-size: 2em;">Voimassa / Valid: {{ date_label }}</div>
             </div>
-            <div class="header-right">
-                <div class="header-info-wrapper">
-                    <div class="h-info-group">
-                        <div class="h-label">Vyöhyke <span class="en">| Zone</span></div>
-                        <div class="h-value">{{ stop_zone }}</div>
-                    </div>
-                    {{ stop_number_html | safe }}
-                </div>
-                <div class="header-logo">{{ logo_html | safe }}</div>
+            <div style="text-align: right;">
+                <div style="font-size: 3em;">{{ stop_zone }}</div>
+                {{ stop_number_html }}
+                <div style="height: 100px;">{{ logo_html }}</div>
             </div>
         </div>
-
-        <div class="content-wrap">
-            <div class="unified-box">
-                <div class="sc-block">
-                    <div class="sc-title">Maanantai&ndash;perjantai <span class="en">Monday&ndash;Friday</span></div>
-                    {{ monfri_html | safe }}
+        <div class="content">
+            <div class="sc-title">Maanantai&ndash;perjantai / Monday&ndash;Friday</div>
+            {{ monfri_html }}
+            {{ legend_html }}
+            <div style="display: flex; gap: 40px; margin-top: 40px;">
+                <div style="flex: 1;">
+                    <div class="sc-title">Lauantai / Saturday</div>
+                    {{ saturday_html }}
                 </div>
-
-                {{ legend_html | safe }}
-
-                <div style="display: flex; gap: 20mm; flex: 1;">
-                    <div style="flex: 1;">
-                        <div class="sc-title">Lauantai <span class="en">Saturday</span></div>
-                        {{ saturday_html | safe }}
-                    </div>
-                    <div style="flex: 1; display: flex; flex-direction: column;">
-                        <div class="sc-title">Sunnuntai <span class="en">Sunday</span></div>
-                        {{ sunday_html | safe }}
-                        
-                        <div class="alareuna-box">
-                            <div class="alareuna-svg">{{ alareuna_svg_inline | safe }}</div>
-                            <div class="qr-group">
-                                <div class="qr-box">
-                                    <img src="{{ qr_img_url }}" style="width: 100%; height: 100%;">
-                                </div>
-                            </div>
-                        </div>
+                <div style="flex: 1;">
+                    <div class="sc-title">Sunnuntai / Sunday</div>
+                    {{ sunday_html }}
+                    <div class="footer">
+                        {{ alareuna_svg_inline }}
+                        <div class="qr"><img src="{{ qr_img_url }}" style="width:100%;"></div>
                     </div>
                 </div>
             </div>
