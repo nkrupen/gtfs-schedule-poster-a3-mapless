@@ -92,12 +92,12 @@ class GTFSSchedulePoster:
             if key not in merged: merged[key] = {"S": None, "H": None, "h": d["h"], "m": d["m"], "line": d["line"]}
             merged[key][d["type"]] = d["pat"]
 
-        final_rows, mon_fri_fns, has_s, has_h, next_fn = [], {}, False, False, 1
+        final_rows, mon_fri_fns, next_fn = [], {}, 1
         for k, info in merged.items():
             pat = info["S"] or info["H"]
             t = "NORMAL"
-            if info["S"] and not info["H"]: t, has_s = "SCHOOL", True
-            elif not info["S"] and info["H"]: t, has_h = "HOLIDAY", True
+            if info["S"] and not info["H"]: t = "SCHOOL"
+            elif not info["S"] and info["H"]: t = "HOLIDAY"
             
             mf = pat[0:5]
             fn = None
@@ -120,66 +120,108 @@ class GTFSSchedulePoster:
             
             res = ""
             for h in sorted(h_map.keys()):
-                res += f"<div style='display:flex; border-bottom:1px solid #ddd; padding:4px;'><div style='width:50px; font-weight:bold;'>{h:02d}</div><div style='display:flex; flex-wrap:wrap; gap:10px;'>{' '.join(h_map[h])}</div></div>"
-            html_blocks[b] = res
+                res += f"<div style='display:flex; border-bottom:1px solid #ddd; padding:4px;'><div style='width:70px; font-weight:bold;'>{h:02d}</div><div style='display:flex; flex-wrap:wrap; gap:10px;'>{' '.join(h_map[h])}</div></div>"
+            html_blocks[b] = res or "Ei vuoroja"
 
-        legend = "<div style='font-size:0.8em; margin-top:10px;'>"
+        legend = "<div style='font-size:1.5em; margin-top:20px;'>"
         for p, fid in sorted(mon_fri_fns.items(), key=lambda x: x[1]):
             days = ["ma","ti","ke","to","pe"]
             active_days = [days[i] for i, v in enumerate(p) if v]
             legend += f"<div><b>{fid})</b> vain {', '.join(active_days)}</div>"
-        if has_s: legend += "<div><span style='background:#E3F2FD;'>&nbsp;&nbsp;</span> = vain koulupäivinä</div>"
-        if has_h: legend += "<div><span style='background:#FFF3E0;'>&nbsp;&nbsp;</span> = vain lomapäivinä</div>"
         legend += "</div>"
         
         return html_blocks, legend
 
     def generate_poster(self, stop_id, city, label, s_mon, h_mon):
-        name = self.data["stops"][self.data["stops"]["stop_id"]==str(stop_id)].iloc[0]["stop_name"]
-        zone = self.data["stops"][self.data["stops"]["stop_id"]==str(stop_id)].iloc[0].get("zone_id", "A")
+        stop_row = self.data["stops"][self.data["stops"]["stop_id"]==str(stop_id)].iloc[0]
+        name = stop_row["stop_name"]
+        zone = stop_row.get("zone_id", "A")
         blocks, legend = self.generate_html_content(stop_id, s_mon, h_mon)
         
-        with open("templates/poster_template.html", "r") as f:
-            html = f.read()
-
-        replacements = {
-            "{{ stop_name }}": name,
-            "{{ date_label }}": label,
-            "{{ stop_zone }}": zone,
-            "{{ monfri_html }}": blocks["Mon-Fri"],
-            "{{ saturday_html }}": blocks["Sat"],
-            "{{ sunday_html }}": blocks["Sun"],
-            "{{ legend_html }}": legend,
-            "{{ font_size }}": "22px",
-            "{{ line_height }}": "1.2",
-            "{{ stop_number_html }}": f"<div>Pysäkki: {stop_id}</div>",
-            "{{ qr_img_url }}": f"https://api.qrserver.com/v1/create-qr-code/?data=https://{city}.fi/{stop_id}",
-            "{{ logo_html }}": "",
-            "{{ alareuna_svg_inline }}": ""
-        }
-
-        for k, v in replacements.items():
-            html = html.replace(k, str(v))
-
+        # YOUR PRECISE DESIGN
+        html_template = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <meta charset="UTF-8">
+        <style>
+            @page {{ size: 800mm 1131mm; margin: 0; }}
+            body {{ margin: 0; font-family: Arial, sans-serif; background: #3069b3; }}
+            .poster {{ width: 800mm; height: 1131mm; display: flex; flex-direction: column; }}
+            .header {{ padding: 60px; color: white; display: flex; justify-content: space-between; align-items: flex-start; }}
+            .h-stop-name {{ font-size: 8em; font-weight: bold; }}
+            .content {{ background: white; margin: 40px; padding: 60px; border-radius: 60px; flex-grow: 1; font-size: 32px; line-height: 1.2; }}
+            .sc-title {{ font-size: 2.5em; font-weight: bold; border-bottom: 8px solid black; margin-bottom: 30px; margin-top: 40px; }}
+            .footer {{ position: relative; height: 200px; margin-top: 40px; }}
+            .qr {{ position: absolute; right: 20px; bottom: 20px; width: 250px; height: 250px; background: white; padding: 15px; border-radius: 30px; }}
+        </style>
+        </head>
+        <body>
+            <div class="poster">
+                <div class="header">
+                    <div>
+                        <div class="h-stop-name">{name}</div>
+                        <div style="font-size: 3em; margin-top: 20px;">Voimassa / Valid: {label}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 6em; font-weight: bold;">{zone}</div>
+                        <div style="font-size: 3em;">Pysäkki: {stop_id}</div>
+                    </div>
+                </div>
+                <div class="content">
+                    <div class="sc-title" style="margin-top:0;">Maanantai&ndash;perjantai / Monday&ndash;Friday</div>
+                    {blocks['Mon-Fri']}
+                    {legend}
+                    <div style="display: flex; gap: 80px; margin-top: 60px;">
+                        <div style="flex: 1;">
+                            <div class="sc-title">Lauantai / Saturday</div>
+                            {blocks['Sat']}
+                        </div>
+                        <div style="flex: 1;">
+                            <div class="sc-title">Sunnuntai / Sunday</div>
+                            {blocks['Sun']}
+                            <div class="footer">
+                                <div class="qr"><img src="https://api.qrserver.com/v1/create-qr-code/?data=https://{city}.fi/{stop_id}" style="width:100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
         out_html = f"{stop_id}.html"
-        with open(out_html, "w") as f: f.write(html)
-        subprocess.run(["google-chrome", "--headless", "--no-sandbox", f"--print-to-pdf={stop_id}.pdf", "--no-pdf-header-footer", out_html])
+        with open(out_html, "w", encoding="utf-8") as f: f.write(html_template)
+        subprocess.run(["google-chrome", "--headless", "--no-sandbox", f"--print-to-pdf={stop_id}.pdf", "--no-pdf-header-footer", out_html], check=True)
         return f"{stop_id}.pdf"
 
+# ---------------------------------------------------------
+# RUNNING LOGIC
+# ---------------------------------------------------------
 if __name__ == "__main__":
-    if os.path.exists("gtfs.zip"):
-        gen = GTFSSchedulePoster("gtfs.zip")
-        stops = input("Pysäkit (esim. 155527,155528): ")
-        city = input("Kaupunki (QR-koodia varten): ")
-        label = input("Voimassaolo (esim. 10.8.2025 alkaen): ")
-        s_date = datetime.strptime(input("Kouluviikon ma (YYYY-MM-DD): "), "%Y-%m-%d")
-        h_date = datetime.strptime(input("Lomaviikon ma (YYYY-MM-DD): "), "%Y-%m-%d")
+    GTFS_ZIP = "gtfs.zip"
+    if os.path.exists(GTFS_ZIP):
+        gen = GTFSSchedulePoster(GTFS_ZIP)
         
-        os.makedirs("output", exist_ok=True)
-        for s in stops.split(","):
-            pdf = gen.generate_poster(s.strip(), city, label, s_date, h_date)
-            shutil.move(pdf, f"output/{pdf}")
+        # CAPTURE USER INPUTS
+        stops_in = input("Enter stop numbers (comma separated): ")
+        city_in = input("Enter city for QR: ")
+        label_in = input("Enter date label (e.g. 10.8.2025 alkaen): ")
+        s_date_in = datetime.strptime(input("School Monday (YYYY-MM-DD): "), "%Y-%m-%d")
+        h_date_in = datetime.strptime(input("Holiday Monday (YYYY-MM-DD): "), "%Y-%m-%d")
         
-        shutil.make_archive("posters", 'zip', "output")
-        from google.colab import files
-        files.download("posters.zip")
+        output_dir = "posters_output"
+        if os.path.exists(output_dir): shutil.rmtree(output_dir)
+        os.makedirs(output_dir)
+
+        for s in stops_in.split(","):
+            s_id = s.strip()
+            print(f"Generating {s_id}...")
+            pdf_file = gen.generate_poster(s_id, city_in, label_in, s_date_in, h_date_in)
+            shutil.move(pdf_file, os.path.join(output_dir, pdf_file))
+        
+        shutil.make_archive("posters", 'zip', output_dir)
+        print("\n✅ PROCESS COMPLETE. Files are zipped in posters.zip.")
+        print("Run the next cell to download.")
+    else:
+        print("Please upload gtfs.zip first.")
