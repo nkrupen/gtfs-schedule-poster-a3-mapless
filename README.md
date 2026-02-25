@@ -72,3 +72,23 @@ The script will create a `generated_posters/` directory containing the individua
 
 * **`FileNotFoundError: templates/poster_template.html`:** Ensure you have created the `templates` folder and placed the HTML file inside it.
 * **PDF Generation Fails:** Ensure Google Chrome is installed. On some Linux distributions, the command might be `google-chrome-stable` or `chromium-browser`. You may need to update the `subprocess.run` command in `main.py` to match your local Chrome binary name.
+
+  ## Running in Google Colab
+
+If you are running this script in Google Colab, Google Chrome is not installed by default. You must run the following commands in a separate Colab cell *before* running the Python script to install Chrome and its dependencies:
+
+```bash
+# 1. Update apt to ensure we can get dependencies
+!apt-get update
+
+# 2. Download the official Google Chrome .deb package
+!wget [https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb](https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb)
+
+# 3. Install it (this will likely fail initially due to missing deps, which is normal)
+!dpkg -i google-chrome-stable_current_amd64.deb
+
+# 4. Fix the missing dependencies automatically
+!apt-get -f install -y
+
+# 5. Verify installation
+!google-chrome --version
