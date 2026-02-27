@@ -44,6 +44,7 @@ gtfs-schedule-poster-a3-mapless/
 
 > **Important:** `gtfs.zip` is not included in this repository.  
 > You must download the GTFS feed for your target transit agency and place it in the root directory.
+> If Colab is used, it is sufficient to place all assets (gtfs.zip, logo and a bottom banner) to the /content folder, so their file path would be e.g. /content/alareuna.svg.
 
 ---
 
