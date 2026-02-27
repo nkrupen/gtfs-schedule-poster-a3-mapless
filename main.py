@@ -541,8 +541,12 @@ class GTFSSchedulePoster:
             
             line_data = self.generate_line_bar_data(school_trips)
 
-            # FLIPPED PRIORITY: Checks root folder first, then assets/
-            bus_icon_raw = self._read_svg_candidates(["bus-icon.svg", "assets/bus-icon.svg"])
+            # FLIPPED PRIORITY + COLAB SMART SEARCH
+            bus_icon_raw = self._read_svg_candidates([
+                "bus-icon.svg", 
+                "/content/bus-icon.svg", 
+                "assets/bus-icon.svg"
+            ])
             if not bus_icon_raw.strip():
                 bus_icon_raw = """
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -578,9 +582,17 @@ class GTFSSchedulePoster:
             
             qr_img_url = f"https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&color=000000&bgcolor=FFFFFF&margin=0&data={encoded_url}"
 
-            # FLIPPED PRIORITY: Checks root folder first, then assets/
-            logo_svg_inline = self._read_svg_candidates(["logo.svg", "assets/logo.svg"])
-            alareuna_svg_inline = self._read_svg_candidates(["alareuna.svg", "assets/alareuna.svg"])
+            # FLIPPED PRIORITY + COLAB SMART SEARCH
+            logo_svg_inline = self._read_svg_candidates([
+                "logo.svg", 
+                "/content/logo.svg", 
+                "assets/logo.svg"
+            ])
+            alareuna_svg_inline = self._read_svg_candidates([
+                "alareuna.svg", 
+                "/content/alareuna.svg", 
+                "assets/alareuna.svg"
+            ])
 
             logo_html = logo_svg_inline.strip()
             if not logo_html:
