@@ -140,7 +140,7 @@ If the repository becomes nested or corrupted:
 
 ---
 
-## Step 3 – Clone the repoository
+## Step 3 – Clone the repository
 
 ```bash
 !git clone https://github.com/nkrupen/gtfs-schedule-poster-a3-mapless.git
