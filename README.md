@@ -236,8 +236,8 @@ Use the reset steps above.
 
 # Notes & Best Practices
 
-- Always use representative Mondays for school and holiday comparison.
-- Ensure your GTFS feed is up to date and internally consistent.
+- Always use representative Mondays for school and holiday comparison. Choose the weeks that do not have any public holidays.
+- Ensure your GTFS feed is up to date and internally consistent, as well as covering the period with the chosen weeks.
 - Large stops may significantly scale down typography automatically.
 - The script assumes standard GTFS structure (`trips.txt`, `stop_times.txt`, `calendar.txt`, etc.) and is tailored to Finnish names of calendars (e.g. containing "KOUL" for school days and "LOMA" for school holidays).
 - When modifying the HTML template, keep all required `{{ placeholder }}` tags intact.
