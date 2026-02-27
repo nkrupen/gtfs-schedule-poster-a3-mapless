@@ -140,7 +140,17 @@ If the repository becomes nested or corrupted:
 
 ---
 
-## Step 3 – Run the Script in Colab
+## Step 3 – Clone the repoository
+
+```bash
+!git clone https://github.com/nkrupen/gtfs-schedule-poster-a3-mapless.git
+%cd gtfs-schedule-poster-a3-mapless
+
+```
+
+---
+
+## Step 4 – Run the Script in Colab
 
 ⚠️ In Colab, you must use `!python`:
 
@@ -158,7 +168,7 @@ The interactive prompts will work inside the Colab cell.
 
 ---
 
-## Step 4 – Download Posters Manually (If Needed)
+## Step 5 – Download Posters Manually (If Needed)
 
 If the ZIP file does not download automatically:
 
