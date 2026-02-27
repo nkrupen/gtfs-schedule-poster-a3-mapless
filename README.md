@@ -47,7 +47,7 @@ gtfs-schedule-poster-a3-mapless/
 
 ---
 
-## Installation
+# Installation (Local Environment)
 
 Clone this repository:
 
@@ -70,7 +70,7 @@ Ensure:
 
 ---
 
-## Usage (Local Environment)
+# Usage (Local Environment)
 
 Run the script:
 
@@ -89,41 +89,24 @@ The interactive prompt will ask for:
 
 ---
 
-## Output
-
-The script will:
-
-1. Generate individual HTML files.
-2. Convert them into PDF posters.
-3. Store them in a `generated_posters/` directory.
-4. Automatically create a bundled file:
-
-```text
-schedule_posters.zip
-```
-
-This ZIP file is located in the project root directory.
-
----
-
 # Running in Google Colab
 
-Google Colab requires additional setup because Chrome is not installed by default.
+Google Colab requires additional setup because Chrome is not installed by default and Python must be executed with `!python`.
 
 ---
 
 ## Step 1 – Install Google Chrome in Colab
 
-Run this in a **separate Colab cell** before executing `main.py`:
+Run this in a **separate Colab cell** before executing the script:
 
 ```bash
-# 1. Update apt to ensure we can get dependencies
+# 1. Update apt
 !apt-get update
 
-# 2. Download the official Google Chrome .deb package
+# 2. Download Chrome
 !wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 
-# 3. Install it (initial dependency errors are normal)
+# 3. Install (dependency warnings are normal)
 !dpkg -i google-chrome-stable_current_amd64.deb
 
 # 4. Fix missing dependencies
@@ -137,29 +120,45 @@ Run this in a **separate Colab cell** before executing `main.py`:
 
 ## Step 2 – (Optional) Reset Project Folder in Colab
 
-If the repository becomes corrupted or nested incorrectly, you can force reset it:
+If the repository becomes nested or corrupted:
 
 ```bash
-# 1. Move out of the folder if you are in it
+# 1. Move out of the folder
 %cd /content
 
-# 2. Force delete the existing project folder
+# 2. Force delete existing folder
 !rm -rf gtfs-schedule-poster-a3-mapless
 
-# 3. Clone it fresh from GitHub
+# 3. Clone fresh
 !git clone https://github.com/nkrupen/gtfs-schedule-poster-a3-mapless.git
 
-# 4. Enter the fresh folder
+# 4. Enter folder
 %cd gtfs-schedule-poster-a3-mapless
 ```
 
-This ensures you are working from a clean repository state.
+---
+
+## Step 3 – Run the Script in Colab
+
+⚠️ In Colab, you must use `!python`:
+
+```bash
+!python main.py
+```
+
+Do **not** use:
+
+```bash
+python main.py
+```
+
+The interactive prompts will work inside the Colab cell.
 
 ---
 
-## Step 3 – Download Posters Manually (If Needed)
+## Step 4 – Download Posters Manually (If Needed)
 
-If the automatic download does not trigger in Colab, manually download the ZIP file:
+If the ZIP file does not download automatically:
 
 ```python
 from google.colab import files
@@ -170,13 +169,13 @@ files.download('schedule_posters.zip')
 
 ## Known Non-Critical Error in Colab
 
-You may see the following error after execution:
+You may see:
 
 ```text
 AttributeError: 'NoneType' object has no attribute 'kernel'
 ```
 
-Full traceback example:
+Example traceback:
 
 ```text
 Traceback (most recent call last):
@@ -191,13 +190,24 @@ AttributeError: 'NoneType' object has no attribute 'kernel'
 
 ### ✅ This error can be safely ignored.
 
-It occurs when:
+If `schedule_posters.zip` exists in the directory, the posters were generated successfully.
 
-- The script is executed outside a proper interactive Colab cell context.
-- The file has already been generated successfully.
-- The Colab communication manager is unavailable.
+---
 
-If `schedule_posters.zip` exists in the directory, your posters were generated correctly.
+# Output
+
+The script will:
+
+1. Generate individual HTML files.
+2. Convert them into PDF posters.
+3. Store them in a `generated_posters/` directory.
+4. Bundle them into:
+
+```text
+schedule_posters.zip
+```
+
+Located in the project root.
 
 ---
 
@@ -208,8 +218,8 @@ If `schedule_posters.zip` exists in the directory, your posters were generated c
 Ensure:
 
 - The `templates` folder exists.
-- The file `poster_template.html` is inside it.
-- The folder structure is correct (no nested duplicate repository folder).
+- `poster_template.html` is inside it.
+- There is no duplicated nested repository folder.
 
 ---
 
@@ -222,20 +232,20 @@ On some Linux systems, the binary may be:
 - `google-chrome-stable`
 - `chromium-browser`
 
-If necessary, modify the Chrome command in `main.py` to match your system.
+If necessary, modify the Chrome command in `main.py`.
 
 ---
 
 ## Nested Repository Issue in Colab
 
-If your path looks like this:
+If your path looks like:
 
 ```text
 gtfs-schedule-poster-a3-mapless/gtfs-schedule-poster-a3-mapless/main.py
 ```
 
-You have cloned the repository inside itself.  
-Use the reset steps above to fix it.
+You cloned the repository inside itself.  
+Use the reset steps above.
 
 ---
 
@@ -243,8 +253,8 @@ Use the reset steps above to fix it.
 
 - Always use representative Mondays for school and holiday comparison.
 - Ensure your GTFS feed is up to date and internally consistent.
-- Large stops with many departures may significantly scale down typography automatically.
+- Large stops may significantly scale down typography automatically.
 - The script assumes standard GTFS structure (`trips.txt`, `stop_times.txt`, `calendar.txt`, etc.).
-- If modifying the HTML template, keep all required `{{ placeholder }}` tags intact.
+- When modifying the HTML template, keep all required `{{ placeholder }}` tags intact.
 
 ---
