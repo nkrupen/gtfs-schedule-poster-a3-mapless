@@ -2,6 +2,7 @@ import pandas as pd
 import zipfile
 import os
 import io
+import re
 import urllib.parse
 import warnings
 from datetime import datetime, timedelta
@@ -61,8 +62,7 @@ class GTFSSchedulePoster:
                         days = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
                         for i, d in enumerate(days):
                             if r.get(d) == "1":
-                                check_dt = mon_dt + timedelta(days=i)
-                                if s_dt <= check_dt <= e_dt: active[i] = True
+                                if s_dt <= (mon_dt + timedelta(days=i)) <= e_dt: active[i] = True
                 except: pass
         cd = self.data.get("calendar_dates", pd.DataFrame())
         if not cd.empty:
@@ -93,9 +93,8 @@ class GTFSSchedulePoster:
         name = row.iloc[0].get("stop_name", "Unknown")
         code = row.iloc[0].get("stop_code", stop_id)
         zone = row.iloc[0].get("zone_id", "A")
-        # Simple zone mapping
-        mapping = {"1": "A", "2": "B", "3": "C", "4": "D"}
-        zone = mapping.get(zone, zone)
+        if zone == "1": zone = "A"
+        if zone == "2": zone = "B"
         return name, code, zone
 
     def generate_schedule_html_data(self, stop_id, s_mon, h_mon):
@@ -189,16 +188,9 @@ class GTFSSchedulePoster:
             f_size = "3.8em" if ds < 55 else ("3.1em" if ds < 80 else "2.1em")
             l_height = "1.3" if ds < 55 else "1.1"
 
-            template_path = 'templates/poster_template.html'
-            if not os.path.exists(template_path):
-                print(f"❌ Template error: {template_path} missing.")
-                return None
-
-            with open(template_path, 'r', encoding='utf-8') as f:
+            with open('templates/poster_template.html', 'r', encoding='utf-8') as f:
                 template_str = f.read()
 
-            qr_url = f"https://api.qrserver.com/v1/create-qr-code/?data={urllib.parse.quote(f'https://{city.lower()}.digitransit.fi/pysakit/{city}:{stop_id}')}"
-            
             replacements = {
                 "{{ stop_name }}": name,
                 "{{ date_label }}": label,
@@ -210,7 +202,7 @@ class GTFSSchedulePoster:
                 "{{ legend_html }}": leg,
                 "{{ font_size }}": f_size,
                 "{{ line_height }}": l_height,
-                "{{ qr_img_url }}": qr_url,
+                "{{ qr_img_url }}": f"https://api.qrserver.com/v1/create-qr-code/?data={urllib.parse.quote(f'https://{city.lower()}.digitransit.fi/pysakit/{city}:{stop_id}')}",
                 "{{ logo_html }}": open("assets/logo.svg").read() if os.path.exists("assets/logo.svg") else "",
                 "{{ alareuna_svg_inline }}": open("assets/alareuna.svg").read() if os.path.exists("assets/alareuna.svg") else ""
             }
@@ -220,67 +212,35 @@ class GTFSSchedulePoster:
 
             with open(out, "w", encoding='utf-8') as f: f.write(template_str)
             pdf = out.replace(".html", ".pdf")
-            
-            # Browser execution (Headless Chrome)
             subprocess.run(["google-chrome", "--headless", "--no-sandbox", f"--print-to-pdf={pdf}", "--no-pdf-header-footer", out], check=True)
             return pdf
-        except Exception as e: 
-            print(f"Error generating poster for stop {stop_id}: {e}")
-            return None
+        except Exception as e: print(f"Error: {e}"); return None
 
     def generate_batch(self, stops_str, label, city, s_dt, h_dt):
         ids = [i.strip() for i in stops_str.split(",") if i.strip()]
-        output_dir = "generated_posters"
-        
-        if os.path.exists(output_dir): shutil.rmtree(output_dir)
-        os.makedirs(output_dir, exist_ok=True)
-        
-        generated_count = 0
+        if os.path.exists("generated_posters"): shutil.rmtree("generated_posters")
+        os.makedirs("generated_posters", exist_ok=True)
         for sid in ids:
-            print(f"Processing stop: {sid}...")
-            html_filename = f"{sid}.html"
-            res_pdf = self.generate_poster(sid, label, city, s_dt, h_dt, html_filename)
-            
-            if res_pdf and os.path.exists(res_pdf):
-                shutil.move(res_pdf, f"{output_dir}/{res_pdf}")
-                generated_count += 1
-            
-            if os.path.exists(html_filename): os.remove(html_filename)
-        
-        if generated_count > 0:
-            shutil.make_archive("schedule_posters", 'zip', output_dir)
-            print(f"✅ Batch complete! {generated_count} posters generated.")
-            try:
-                from google.colab import files
-                files.download("schedule_posters.zip")
-            except:
-                print("Please download 'schedule_posters.zip' from your files sidebar.")
-        else:
-            print("❌ No posters were generated. Check stop IDs and GTFS data.")
-
-def get_valid_date(prompt):
-    while True:
-        d_str = input(prompt).strip()
+            res = self.generate_poster(sid, label, city, s_dt, h_dt, f"{sid}.html")
+            if res: shutil.move(res, f"generated_posters/{res}")
+            if os.path.exists(f"{sid}.html"): os.remove(f"{sid}.html")
+        shutil.make_archive("schedule_posters", 'zip', "generated_posters")
+        print("✅ Batch complete!")
         try:
-            return datetime.strptime(d_str, "%Y-%m-%d")
-        except ValueError:
-            print("   ⚠️ Format error! Use YYYY-MM-DD (e.g. 2024-08-12)")
+            from google.colab import files
+            files.download("schedule_posters.zip")
+        except Exception as e:
+            print(f"⚠️ Automatic download failed: {e}")
+            print("Please manually download 'schedule_posters.zip' from the files sidebar on the left.")
 
 if __name__ == "__main__":
-    GTFS_FILE = "gtfs.zip"
-    
-    if os.path.exists(GTFS_FILE):
-        gen = GTFSSchedulePoster(GTFS_FILE)
-        
-        print("\n--- GTFS POSTER GENERATOR ---")
-        st_input = input("Enter stop numbers (comma-separated, e.g., 155527,155528): ")
-        city_input = input("Enter city (e.g., Kotka, Helsinki): ").strip()
-        label_input = input("Enter date label (e.g., 12.08.2024 - 01.06.2025): ")
-        
-        print("\nSet service comparison dates:")
-        school_mon = get_valid_date("1. School Monday (YYYY-MM-DD): ")
-        holiday_mon = get_valid_date("2. Holiday Monday (YYYY-MM-DD): ")
-        
-        gen.generate_batch(st_input, label_input, city_input, school_mon, holiday_mon)
+    if os.path.exists("gtfs.zip"):
+        gen = GTFSSchedulePoster("gtfs.zip")
+        st = input("Enter stop numbers (e.g., 155527,155528): ")
+        cy = input("Enter city (e.g., Kotka, Helsinki): ").strip()
+        lb = input("Enter date label: ")
+        sd = datetime.strptime(input("School Mon (YYYY-MM-DD): "), "%Y-%m-%d")
+        hd = datetime.strptime(input("Holiday Mon (YYYY-MM-DD): "), "%Y-%m-%d")
+        gen.generate_batch(st, lb, cy, sd, hd)
     else:
-        print(f"❌ Error: {GTFS_FILE} not found in current directory.")
+        print("❌ Error: gtfs.zip not found.")
