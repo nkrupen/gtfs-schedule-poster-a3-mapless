@@ -179,33 +179,6 @@ files.download('schedule_posters.zip')
 
 ---
 
-## Known Non-Critical Error in Colab
-
-You may see:
-
-```text
-AttributeError: 'NoneType' object has no attribute 'kernel'
-```
-
-Example traceback:
-
-```text
-Traceback (most recent call last):
-  File ".../main.py", line 1152, in <module>
-    gen.generate_batch(...)
-  File ".../main.py", line 1129, in generate_batch
-    files.download(final_zip_name)
-  File ".../google/colab/files.py", line 232, in download
-    comm_manager = _IPython.get_ipython().kernel.comm_manager
-AttributeError: 'NoneType' object has no attribute 'kernel'
-```
-
-### ✅ This error can be safely ignored.
-
-If `schedule_posters.zip` exists in the directory, the posters were generated successfully.
-
----
-
 # Output
 
 The script will:
