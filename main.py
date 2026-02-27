@@ -1067,7 +1067,13 @@ class GTFSSchedulePoster:
                 "--virtual-time-budget=10000",
                 html_path,
             ]
-            subprocess.run(cmd, check=True)
+            # MUTE GOOGLE CHROME OUTPUT COMPLETELY
+            subprocess.run(
+                cmd, 
+                check=True, 
+                stdout=subprocess.DEVNULL, 
+                stderr=subprocess.DEVNULL
+            )
             return True
         except Exception as e:
             print(f"❌ PDF Conversion Failed for {html_path}: {e}")
