@@ -1133,7 +1133,7 @@ class GTFSSchedulePoster:
 
 if __name__ == "__main__":
     
-    gtfs_file = input("Enter GTFS zip filename (default: 218.zip): ").strip() or "218.zip"
+    gtfs_file = input("Enter GTFS zip filename (default: gtfs.zip): ").strip() or "gtfs.zip"
 
     if os.path.exists(gtfs_file):
         gen = GTFSSchedulePoster(gtfs_file)
