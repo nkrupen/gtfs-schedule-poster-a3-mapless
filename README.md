@@ -18,6 +18,15 @@ This tool automatically calculates active bus trips, handles school vs. holiday 
 
 ---
 
+## Copyright and License
+
+Copyright 2026 Kotkan Kaupunki / City of Kotka. 
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+**Author & Primary Maintainer:** [Nikolay Krupen]
+
+---
+
 ## Prerequisites
 
 - Python 3.8+
