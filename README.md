@@ -1,6 +1,6 @@
-# GTFS Schedule Poster Generator
+# GTFS Schedule Poster Generator (A3-format posters without a map or a route tree)
 
-A Python tool that parses GTFS (General Transit Feed Specification) data to generate large-format, printable PDF schedule posters for transit stops.
+A Python tool that parses GTFS (General Transit Feed Specification) data to generate A3-format, printable PDF schedule posters for transit stops.
 
 This tool automatically calculates active bus trips, handles school vs. holiday schedules, generates localized QR codes, and dynamically scales typography to ensure dense schedules fit perfectly on the page.
 
