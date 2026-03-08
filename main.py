@@ -18,12 +18,12 @@ class GTFSSchedulePoster:
     Supports batch processing and zipping of results.
     """
 
-    def __init__(self, gtfs_path):
+    def __init__(self, gtfs_path, theme_color="#3069b3"):
         self.gtfs_path = gtfs_path
         self.data = {}
 
         self.config = {
-            "color": "#3069b3",
+            "color": theme_color,
             "page_w_mm": 800,
             "page_h_mm": 1131,
             "font_main": "Arial, sans-serif",
@@ -1163,7 +1163,11 @@ if __name__ == "__main__":
 
     if gtfs_file:
         print(f"Found GTFS file at: {gtfs_file}")
-        gen = GTFSSchedulePoster(gtfs_file)
+        
+        # New prompt for background and icon color
+        color_input = input("Enter theme hex color for background and bus icons (default: #3069b3): ").strip() or "#3069b3"
+        
+        gen = GTFSSchedulePoster(gtfs_file, theme_color=color_input)
         
         user_input = input("Enter stop numbers separated by comma (e.g., 155527,155528): ").strip()
         
