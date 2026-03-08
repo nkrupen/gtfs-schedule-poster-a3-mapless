@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <style>
     @page { size: 800mm 1131mm; margin: 0; }
-    body { margin: 0; font-family: Arial, sans-serif; background: #3069b3; }
+    body { margin: 0; font-family: Arial, sans-serif; background: {{ theme_color }}; }
     .poster { width: 800mm; height: 1131mm; display: flex; flex-direction: column; }
     .header { padding: 40px; color: white; display: flex; justify-content: space-between; }
     .h-stop-name { font-size: 5em; font-weight: bold; }
@@ -12,6 +12,10 @@
     .sc-title { font-size: 1.5em; font-weight: bold; border-bottom: 5px solid black; margin-bottom: 20px; }
     .footer { position: relative; height: 140px; margin-top: 20px; }
     .qr { position: absolute; right: 20px; bottom: 20px; width: 200px; height: 200px; background: white; padding: 10px; border-radius: 20px; }
+    
+    /* Added bus-icon styling in case the HTML template begins handling it natively */
+    .bus-icon-wrap { color: {{ theme_color }}; display: inline-flex; align-items: center; justify-content: center; }
+    .bus-icon { width: 50px; height: 50px; display: block; }
 </style>
 </head>
 <body>
