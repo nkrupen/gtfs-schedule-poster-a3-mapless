@@ -15,6 +15,7 @@ This tool automatically calculates active bus trips, handles school vs. holiday 
 - **Automated PDF Conversion:** Uses headless Google Chrome to generate high-quality, print-ready PDFs.
 - **Batch Processing:** Generate posters for multiple stop IDs in one run and automatically bundle them into a single `.zip` file.
 - **QR Code Integration:** Automatically generates Digitransit-based stop links using the provided city/area name.
+- **Selection of color palette:** Allows the user to select a HEX color for background and bus icons.
 
 ---
 
@@ -92,6 +93,7 @@ python main.py
 The interactive prompt will ask for:
 
 - **GTFS File:** Name of your GTFS zip (default: `gtfs.zip`)
+- **HEX color code:** Theme hex color for background and bus icons (default: #3069b3)
 - **Stop Numbers:** Comma-separated stop IDs (e.g., `155527,155528`)
 - **City or Operation Area Name:** Used for Digitransit QR code URL (e.g., `Kotka`, `Kouvola`)
 - **Date Label:** Validity period printed on the poster (e.g., `10.8.2025–31.5.2026`)
