@@ -5,6 +5,12 @@ A Python tool that parses GTFS (General Transit Feed Specification) data to gene
 This tool automatically calculates active bus trips, handles school vs. holiday schedules, generates localized QR codes, and dynamically scales typography to ensure dense schedules fit perfectly on the page.
 
 ---
+## 🆕 Update 04/2026
+
+- Added Google Colab pre-processing (Chrome + Arial fonts)
+- Added CMYK (FOGRA51) post-processing workflow
+
+---
 
 ## Features
 
@@ -129,8 +135,18 @@ Run this in a **separate Colab cell** before executing the script:
 ```
 
 ---
+## Step 2 – Install MS Core Fonts (Arial). Optional; if not used, a LiberationSans font will be used for printing.
 
-## Step 2 – (Optional) Reset Project Folder in Colab
+```bash
+!echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
+!apt-get update
+!apt-get install -y ttf-mscorefonts-installer
+!fc-cache -f -v
+```
+
+---
+
+## Step 3 – (Optional) Reset Project Folder in Colab
 
 If the repository becomes nested or corrupted:
 
@@ -150,7 +166,7 @@ If the repository becomes nested or corrupted:
 
 ---
 
-## Step 3 – Clone the repository
+## Step 4 – Clone the repository
 
 ```bash
 !git clone https://github.com/nkrupen/gtfs-schedule-poster-a3-mapless.git
@@ -160,7 +176,7 @@ If the repository becomes nested or corrupted:
 
 ---
 
-## Step 4 – Run the Script in Colab
+## Step 5 – Run the Script in Colab
 
 ⚠️ In Colab, you must use `!python`:
 
@@ -178,7 +194,7 @@ The interactive prompts will work inside the Colab cell.
 
 ---
 
-## Step 5 – Download Posters Manually (If Needed)
+## Step 6 – Download Posters Manually (If Needed)
 
 If the ZIP file does not download automatically:
 
@@ -203,6 +219,58 @@ schedule_posters.zip
 ```
 
 Located in the project root.
+
+---
+# 🎨 CMYK Conversion (FOGRA51)
+
+## Install Ghostscript and ensure that PSOcoated_v3.icc file is in the Colab folder
+
+```bash
+!apt-get update
+!apt-get install -y ghostscript
+```
+
+---
+
+## Prepare a conversion function
+
+```python
+import subprocess
+from google.colab import files
+
+def convert_to_fogra51(input_pdf, output_pdf, icc_profile_path="PSOcoated_v3.icc"):
+    gs_cmd = [
+        "gs",
+        "-dSAFER",
+        "-dBATCH",
+        "-dNOPAUSE",
+        "-dNOCACHE",
+        "-sDEVICE=pdfwrite",
+        "-sColorConversionStrategy=CMYK",
+        f"-sOutputICCProfile={icc_profile_path}",
+        "-dOverrideICC=true",
+        f"-sOutputFile={output_pdf}",
+        input_pdf
+    ]
+
+    print(f"Converting {input_pdf} to CMYK FOGRA 51...")
+    subprocess.run(gs_cmd, check=True)
+    print("Conversion complete!")
+```
+
+---
+## Make a conversion
+
+```bash
+convert_to_fogra51("YOURFILE.pdf", "YOURFILE_cmyk.pdf")
+```
+
+---
+## Download a converted file
+
+```bash
+files.download("YOURFILE_cmyk.pdf")
+```
 
 ---
 
